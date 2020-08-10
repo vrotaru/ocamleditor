@@ -22,6 +22,85 @@
 
 open Printf
 
+(* Cairo helpers *)
+let f = float_of_int
+
+let with_color color k =
+  let color = GDraw.color color in
+  let r = Gdk.Color.red color in
+  let g = Gdk.Color.green color in
+  let b = Gdk.Color.blue color in
+  k (f r) (f g) (f b)
+
+let line drawable x1 y1 x2 y2 =
+  let open Cairo in
+  move_to drawable (f x1) (f y1);
+  line_to drawable (f x2) (f y2);
+  stroke drawable
+;;
+
+let path drawable pt more =
+  let open Cairo in
+  let rec lines = function
+    | [] -> ()
+    | (x, y) :: rest -> line_to drawable (f x) (f y); lines rest
+  in
+  let x, y = pt in
+  move_to drawable (f x) (f y);
+  lines more;
+  line_to drawable (f x) (f y)
+;;
+
+let rectangle drawable ~x ~y ~width ~height ?(filled = false) () =
+  Cairo.move_to drawable (f x) (f y);
+  Cairo.line_to drawable (f (x + width)) (f y);
+  Cairo.line_to drawable (f (x + width)) (f (y + height));
+  Cairo.line_to drawable (f x) (f (y + height));
+  Cairo.line_to drawable (f x) (f y);
+
+  if filled then Cairo.fill drawable else Cairo.stroke drawable 
+;;
+
+let polygon drawable ?(filled = false) points =
+  match points with
+  | [] -> assert false
+  | pt :: more -> path drawable pt more;
+
+  if filled then Cairo.fill drawable else Cairo.stroke drawable
+;;
+let rec segments drawable = function
+  | [] -> ()
+  | ((x1, y1), (x2, y2)) :: more ->
+    line drawable x1 y1 x2 y2; segments drawable more
+;;
+
+let rec lines_ drawable = function
+  | [] -> ()
+  | (x1, y1) :: (x2, y2) :: more -> line drawable x1 y1 x2 y2; lines_ drawable more
+  | _ -> assert false
+;;
+
+
+let set_foreground drawable color =
+  with_color color (Cairo.set_source_rgb drawable)
+
+let set_line_attributes drawable ?(width=1)
+ ?(cap=`PROJECTING) ?(style=`SOLID) ?(join=`ROUND) () =
+  Cairo.set_line_width drawable (f width);
+  begin match style with
+  | `ON_OFF_DASH -> Cairo.set_dash drawable [| 3.0 |]
+  | `DOUBLE_DASH -> Cairo.set_dash drawable [| 1.0; 2.0 |]
+  | `SOLID       -> Cairo.set_dash drawable [|     |]
+  end;
+  begin match cap with
+  | `PROJECTING -> Cairo.set_line_cap drawable Cairo.BUTT
+  | `ROUND      -> Cairo.set_line_cap drawable Cairo.ROUND
+  end;
+  begin match join with
+  | `ROUND -> Cairo.set_line_join drawable Cairo.JOIN_ROUND
+  | `MITER -> Cairo.set_line_join drawable Cairo.JOIN_MITER
+  end
+;;
 let forward_non_blank iter =
   let rec f it =
     let stop = it#forward_char in
@@ -31,7 +110,7 @@ let forward_non_blank iter =
   in
   f iter
 
-class error_indication (view : Ocaml_text.view) vscrollbar global_gutter =
+class error_indication (view : Ocaml_text.view) vscrollbar (global_gutter : GMisc.drawing_area) =
   let buffer = view#tbuffer in
   let tag_table = new GText.tag_table buffer#tag_table in
   let create_tags () =
@@ -227,7 +306,7 @@ object (self)
     end
 
   method tooltip ?(sticky=false) ?(need_focus=true) (location : [`ITER of GText.iter | `XY of int * int]) =
-    if enabled && (not need_focus || view#misc#get_flag `HAS_FOCUS) then begin
+    if enabled && (not need_focus || view#has_focus) then begin
       let iter = match location with `XY (x, y) -> view#get_iter_at_location ~x ~y | `ITER it -> it in
       if not iter#ends_line then begin
         try
@@ -279,7 +358,7 @@ object (self)
                     let y = y - popup#misc#allocation.Gtk.height - 5 in
                     popup#move ~x ~y;
                   | `XY _ ->
-                    let x, y = Gdk.Window.get_pointer_location (Gdk.Window.root_parent ()) in
+                    let x, y = Gdk.Window.get_pointer_location popup#misc#window in
                     popup#show();
                     popup#move ~x ~y:(y - popup#misc#allocation.Gtk.height - 12);
               end;
@@ -295,27 +374,28 @@ object (self)
     try
       let window = global_gutter#misc#window in
       table <- [];
-      let drawable = new GDraw.drawable window in
-      drawable#set_line_attributes ~width:1 ~style:`SOLID ~join:`ROUND ();
-      let width0, height = drawable#size in
+      let drawable = Gdk.Cairo.create window in
+      set_line_attributes drawable ~width:1 ~style:`SOLID ~join:`ROUND ();
+      let allocation : Gtk.rectangle = global_gutter#misc#allocation in
+      let width0, height = allocation.width, allocation.height in
       let width = if !Plugins.diff = None then width0 else Oe_config.global_gutter_size in
       let x0 = width0 - width in
       let alloc = vscrollbar#misc#allocation in
       (* Clean up *)
-      drawable#set_foreground view#gutter.Gutter.bg_color;
-      drawable#rectangle ~filled:true ~x:x0 ~y:0 ~width ~height ();
+      set_foreground drawable view#gutter.Gutter.bg_color;
+      rectangle drawable ~filled:true ~x:x0 ~y:0 ~width ~height ();
       (* Rectangles at the top and bottom *)
-      drawable#set_foreground view#gutter.Gutter.fg_color;
-      drawable#rectangle ~filled:false ~x:x0 ~y:0 ~width:(width - 1) ~height:(alloc.Gtk.width - 1) ();
-      drawable#rectangle ~filled:false ~x:x0 ~y:(height - alloc.Gtk.width) ~width:(width - 1) ~height:(alloc.Gtk.width - 2) ();
+      set_foreground drawable view#gutter.Gutter.fg_color;
+      rectangle drawable ~filled:false ~x:x0 ~y:0 ~width:(width - 1) ~height:(alloc.Gtk.width - 1) ();
+      rectangle drawable ~filled:false ~x:x0 ~y:(height - alloc.Gtk.width) ~width:(width - 1) ~height:(alloc.Gtk.width - 2) ();
       (* Rectangle at the top in different color *)
       let color = if self#has_errors#get then (Some Oe_config.error_underline_color)
         else if self#has_warnings#get then (Some Oe_config.warning_popup_border_color)
         else None (*(Some Oe_config.global_gutter_no_errors)*)
       in
       Gaux.may color ~f:begin fun color ->
-        drawable#set_foreground color;
-        drawable#rectangle ~filled:true ~x:(x0 + 1) ~y:1 ~width:(width - 2) ~height:(alloc.Gtk.width - 2) ();
+        set_foreground drawable color;
+        rectangle drawable ~filled:true ~x:(x0 + 1) ~y:1 ~width:(width - 2) ~height:(alloc.Gtk.width - 2) ();
       end;
       (* Draw markers *)
       let height = height - 2 * alloc.Gtk.width in
@@ -326,7 +406,7 @@ object (self)
       if Oe_config.global_gutter_comments_enabled && tag_error_bounds = [] && view#mark_occurrences_manager#table = [] then begin
         match [@warning "-4"] Comments.scan_utf8 (buffer#get_text ()) with
           | Comments.Utf8 comments ->
-            Gdk.GC.set_dashes drawable#gc ~offset:0 [1; 1];
+            (*Gdk.GC.set_dashes drawable#gc ~offset:0 [1; 1];*)
             List.iter begin fun (start, stop, _, odoc) ->
               let iter = buffer#get_iter (`OFFSET start) in
               let is_fold = view#code_folding#is_folded iter#forward_to_line_end <> None in
@@ -339,13 +419,13 @@ object (self)
               let filled = odoc in
               let offset = if y1 = y2 then 0 else 1 in
               let style = if is_fold then `ON_OFF_DASH else `SOLID in
-              drawable#set_line_attributes ~width:1 ~style ();
+              set_line_attributes drawable ~width:1 ~style ();
               if filled then begin
-                drawable#set_foreground Oe_config.global_gutter_comments_bgcolor;
-                drawable#rectangle ~filled ~x:x0 ~y:y1 ~width:(width - offset) ~height:(y2 - y1) ();
+                set_foreground drawable Oe_config.global_gutter_comments_bgcolor;
+                rectangle drawable ~filled ~x:x0 ~y:y1 ~width:(width - offset) ~height:(y2 - y1) ();
               end;
-              drawable#set_foreground Oe_config.global_gutter_comments_color;
-              drawable#rectangle (*~filled*) ~x:x0 ~y:y1 ~width:(width - offset) ~height:(y2 - y1) ();
+              set_foreground drawable Oe_config.global_gutter_comments_color;
+              rectangle drawable (*~filled*) ~x:x0 ~y:y1 ~width:(width - offset) ~height:(y2 - y1) ();
             end comments
           | _ -> assert false
       end;
@@ -355,7 +435,7 @@ object (self)
           if is_unused
           then (`NAME Oe_config.warning_unused_color) else color
         in
-        drawable#set_foreground color;
+        set_foreground drawable color;
         let line_start = float (buffer#get_iter_at_mark (`MARK start))#line in
         let y = int_of_float ((line_start /. line_count) *. height) in
         table <- (y + 1, start) :: table;
@@ -369,8 +449,8 @@ object (self)
             lines := (x0 + (!i+1) * h, y + h/2) :: (x0 + !i * h, y - h/2) :: !lines;
             incr i; incr i;
           done;
-          drawable#lines !lines
-        end else drawable#rectangle ~filled:true ~x:x0 ~y ~width ~height:3 ();
+          lines_ drawable !lines
+        end else rectangle drawable ~filled:true ~x:x0 ~y ~width ~height:3 ();
       in
       (* Warnings *)
       List.iter begin fun (start, _, warning) ->
@@ -393,11 +473,11 @@ object (self)
               let y2 = y2 + alloc.Gtk.width + 1 in
               let width = width - 1 in
               let height = y2 - y1 in
-              drawable#set_line_attributes ~width:1 ~style:`SOLID ();
-              drawable#set_foreground bg;
-              drawable#rectangle ~filled:true ~x:x0 ~y:y1 ~width ~height ();
-              drawable#set_foreground border;
-              drawable#rectangle ~filled:false ~x:x0 ~y:y1 ~width ~height ();
+              set_line_attributes drawable ~width:1 ~style:`SOLID ();
+              set_foreground drawable bg;
+              rectangle drawable ~filled:true ~x:x0 ~y:y1 ~width ~height ();
+              set_foreground drawable border;
+              rectangle drawable ~filled:false ~x:x0 ~y:y1 ~width ~height ();
             end view#mark_occurrences_manager#table;
           | _ -> ()
       end;
@@ -433,7 +513,7 @@ object (self)
               while !x <= x2 do
                 segments := (!x + phase, y + offset) :: (!x, yu + offset) :: !segments; x := !x + phase2;
               done;
-              drawable#lines !segments;
+              lines_ drawable !segments;
             end;
           with Exit | Invalid_argument _ -> ()
         end;
@@ -454,23 +534,24 @@ object (self)
           let top, _ = view#get_line_at_y ya in
           let bottom, _ = view#get_line_at_y (ya + (Gdk.Rectangle.height expose_area)) in
           (*  *)
-          let drawable = new GDraw.drawable window in
-          drawable#set_line_attributes ~width:1 ~style:`SOLID ~join:`MITER ();
+          let drawable = Gdk.Cairo.create window in
+          set_line_attributes drawable ~width:1 ~style:`SOLID ~join:`MITER ();
           let f = self#draw_underline drawable top bottom x0 y0 in
-          drawable#set_foreground Oe_config.warning_underline_color;
+          set_foreground drawable Oe_config.warning_underline_color;
           List.iter (f 0) tag_warning_bounds;
-          drawable#set_foreground Oe_config.warning_underline_shadow;
+          set_foreground drawable Oe_config.warning_underline_shadow;
           List.iter (f 1) tag_warning_bounds;
           begin
             match Oe_config.error_underline_mode with
               | `CUSTOM ->
-                drawable#set_foreground Oe_config.error_underline_color;
+                set_foreground drawable Oe_config.error_underline_color;
                 List.iter (f 0) tag_error_bounds;
-                drawable#set_foreground Oe_config.error_underline_shadow;
+                set_foreground drawable Oe_config.error_underline_shadow;
                 List.iter (f 1) tag_error_bounds;
               | _ -> ()
           end;
-          Gdk.GC.set_fill drawable#gc `SOLID;
+          (*Gdk.GC.set_fill drawable#gc `SOLID;*)
+          Cairo.fill drawable;
           false
         | _ -> false
     end else false
@@ -499,8 +580,8 @@ object (self)
         let y = GdkEvent.Button.y ev in
         if y > float (alloc.Gtk.width) then begin
           let window = global_gutter#misc#window in
-          let drawable = new GDraw.drawable window in
-          let _, height = drawable#size in
+          let drawable = Gdk.Cairo.create window in
+          let height = global_gutter#misc#allocation.height in
           let height = float (height - 2 * alloc.Gtk.width) in
           let y = y -. (float alloc.Gtk.width) in
           let tooltip, iter =

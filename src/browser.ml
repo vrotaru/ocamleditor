@@ -35,7 +35,7 @@ class browser () =
     ~kind:`TOPLEVEL
     ~position:`CENTER
     ~focus_on_map:true
-    ~allow_shrink:true
+    ~resizable:true
     ~show:false ()
   in
   (* signals *)
@@ -953,7 +953,7 @@ object (self)
           Option.iter
             begin fun button ->
               button#misc#set_sensitive page#buffer#modified;
-              button#misc#set_state `NORMAL
+              (*button#misc#set_state `NORMAL*)
             end
             button
         end;
@@ -962,7 +962,7 @@ object (self)
           Option.iter
             begin fun button ->
               button#misc#set_sensitive exists_unsaved;
-              button#misc#set_state `NORMAL
+              (*button#misc#set_state `NORMAL*)
             end
             button
         end;

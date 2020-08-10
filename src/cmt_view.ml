@@ -393,7 +393,7 @@ object (self)
         match align with
           | Some align ->
             view#vadjustment#set_value (align *. view#vadjustment#upper);
-          | None when page#view#misc#get_flag `HAS_FOCUS ->
+          | None when page#view#has_focus ->
             if not (Gmisclib.Util.treeview_is_path_onscreen view path) then begin
               view#scroll_to_cell ~align:(0.38, 0.) path vc;
             end;

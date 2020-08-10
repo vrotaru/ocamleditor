@@ -42,8 +42,34 @@ let color_hl_fg = `NAME "#000000"
 let color_hl_bg = `NAME "#e0f0ff"
 let color_hl_bg1 = `NAME "#fff0e0"
 
+(* Cairo helpers *)
+let f = float_of_int
+
+let with_color color k =
+  let color = GDraw.color color in
+  let r = Gdk.Color.red color in
+  let g = Gdk.Color.green color in
+  let b = Gdk.Color.blue color in
+  k (f r) (f g) (f b)
+
+let line drawable x1 y1 x2 y2 =
+  let open Cairo in
+  move_to drawable (f x1) (f y1);
+  line_to drawable (f x2) (f y2);
+  stroke drawable
+
+let set_foreground drawable color =
+  with_color color (Cairo.set_source_rgb drawable)
+
+let set_line_attributes drawable ~width ~style () =
+  Cairo.set_line_width drawable (f width);
+  match style with
+  | `ON_OFF_DASH -> Cairo.set_dash drawable [| 3.0 |]
+  | `SOLID       -> Cairo.set_dash drawable [|     |]
+;;
+
 (** draw_indent_lines *)
-let draw_indent_lines view (drawable : GDraw.drawable) start stop y0 =
+let draw_indent_lines view (drawable : Gdk.cairo) start stop y0 =
   let left_margin = view#left_margin + 1 in (* +1 per evitare di coprire la linea del cursore *)
   let buffer = view#tbuffer in
   let current_iter : GText.iter = buffer#get_iter `INSERT in
@@ -95,15 +121,15 @@ let draw_indent_lines view (drawable : GDraw.drawable) start stop y0 =
 
   let draw_highlight x y1 y2 =
     if use_glow then begin
-      drawable#set_foreground color_hl_bg;
-      drawable#set_line_attributes ~width:3 ~style:`SOLID ();
-      drawable#line ~x ~y:y1 ~x ~y:y2;
+      set_foreground drawable color_hl_bg;
+      set_line_attributes drawable ~width:3 ~style:`SOLID ();
+      line drawable x y1 x y2
     end;
-    drawable#set_foreground color_hl_fg;
-    drawable#set_line_attributes ~width ~style ();
+    set_foreground drawable color_hl_fg;
+    set_line_attributes drawable ~width ~style ();
     current_block := false;
   in
-  Gdk.GC.set_dashes drawable#gc ~offset:1 Oe_config.on_off_dashes;
+  (*Gdk.GC.set_dashes drawable#gc ~offset:1 Oe_config.on_off_dashes;*)
   List.iter begin fun (x, xlines) ->
     List.iter begin fun (y1, y2) ->
       if y2 - y1 > !hline then begin
@@ -112,28 +138,28 @@ let draw_indent_lines view (drawable : GDraw.drawable) start stop y0 =
             draw_highlight x y1 y2;
           end else begin
             if use_glow then begin
-              drawable#set_foreground color_hl_bg1(*view#options#base_color*);
-              drawable#set_line_attributes ~width:3 ~style:`SOLID ();
-              drawable#line ~x ~y:y1 ~x ~y:y2;
+              set_foreground drawable color_hl_bg1(*view#options#base_color*);
+              set_line_attributes drawable ~width:3 ~style:`SOLID ();
+              line drawable x y1 x y2;
             end;
-            drawable#set_foreground view#options#indent_lines_color_dashed;
-            drawable#set_line_attributes ~width ~style ();
+            set_foreground drawable view#options#indent_lines_color_dashed;
+            set_line_attributes drawable ~width ~style ();
           end;
-          drawable#line ~x ~y:y1 ~x ~y:y2;
+          line drawable x y1 x y2;
         end else begin
           if y2 - y1 > !hline then begin
             if !current_block && y1 <= y_current_line && y_current_line <= y2 then begin
               draw_highlight x y1 y2;
             end else begin
               if use_glow then begin
-                drawable#set_foreground color_hl_bg1(*view#options#base_color*);
-                drawable#set_line_attributes ~width:3 ~style:`SOLID ();
-                drawable#line ~x ~y:y1 ~x ~y:y2;
+                set_foreground drawable color_hl_bg1(*view#options#base_color*);
+                set_line_attributes drawable ~width:3 ~style:`SOLID ();
+                line drawable x y1 x y2;
               end;
-              drawable#set_foreground view#options#indent_lines_color_solid;
-              drawable#set_line_attributes ~width ~style:`SOLID ();
+              set_foreground drawable view#options#indent_lines_color_solid;
+              set_line_attributes drawable ~width ~style:`SOLID ();
             end;
-            drawable#line ~x ~y:y1 ~x ~y:y2;
+            line drawable x y1 x y2;
           end;
         end
       end

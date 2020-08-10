@@ -24,6 +24,53 @@ open Printf
 open Text_util
 open Miscellanea
 
+(* Cairo helpers *)
+let f = float_of_int;;
+
+let with_color color k =
+  let color = GDraw.color color in
+  let r = Gdk.Color.red color in
+  let g = Gdk.Color.green color in
+  let b = Gdk.Color.blue color in
+  k (f r) (f g) (f b)
+;;
+
+let line drawable x1 y1 x2 y2 =
+  let open Cairo in
+  move_to drawable (f x1) (f y1);
+  line_to drawable (f x2) (f y2);
+  stroke drawable
+;;
+
+
+let rectangle drawable ~x ~y ~width ~height ?(filled = false) () =
+  Cairo.move_to drawable (f x) (f y);
+  Cairo.line_to drawable (f (x + width)) (f y);
+  Cairo.line_to drawable (f (x + width)) (f (y + height));
+  Cairo.line_to drawable (f x) (f (y + height));
+  Cairo.line_to drawable (f x) (f y);
+
+  if filled then Cairo.fill drawable else Cairo.stroke drawable 
+;;
+
+let set_foreground drawable color =
+  with_color color (Cairo.set_source_rgb drawable)
+;;
+
+let set_line_attributes drawable ~width ?(style = `SOLID) ?(join = `BEVEL) () =
+  Cairo.set_line_width drawable (f width);
+  match style with
+  | `ON_OFF_DASH -> Cairo.set_dash drawable [| 3.0 |]
+  | `DOUBLE_DASH -> Cairo.set_dash drawable [| 3.0; 1.0 |]
+  | `SOLID       -> Cairo.set_dash drawable [|     |]
+  ;
+  match join with
+  | `ROUND -> Cairo.set_line_join drawable Cairo.JOIN_ROUND
+  | `MITER -> Cairo.set_line_join drawable Cairo.JOIN_MITER
+  | `BEVEL -> Cairo.set_line_join drawable Cairo.JOIN_BEVEL
+;;
+
+
 (** Buffer *)
 class buffer =
   let word_bound = Miscellanea.regexp "\\b" in
@@ -425,7 +472,7 @@ object (self)
     let x = Gdk.Rectangle.x rect in
     let y = Gdk.Rectangle.y rect in
     let x0, y0 =
-      let pX, pY = Gdk.Window.get_pointer_location (Gdk.Window.root_parent ()) in
+      let pX, pY = Gdk.Window.get_pointer_location (Gdk.Window.get_parent self#misc#window) in
       let win = (match view#get_window `TEXT with None -> assert false | Some w -> w) in
       let px, py = Gdk.Window.get_pointer_location win in
       (pX - px), (pY - py)
@@ -438,7 +485,7 @@ object (self)
     x, y
 
   method get_location_top_right () =
-    let pX, pY = Gdk.Window.get_pointer_location (Gdk.Window.root_parent ()) in
+    let pX, pY = Gdk.Window.get_pointer_location (Gdk.Window.get_parent self#misc#window) in
     let win = (match self#get_window `WIDGET
       with None -> failwith "Text.text#get_location_top_right `WIDGET = None" | Some w -> w) in
     let px, py = Gdk.Window.get_pointer_location win in
@@ -599,7 +646,7 @@ object (self)
             (*  *)
             let adjust      = Oe_config.current_line_border_adjust in
             let hadjust     = match hadjustment with Some adj -> int_of_float adj#value - self#left_margin | _ -> 0 in
-            let drawable    = new GDraw.drawable window in
+            let drawable    = GDraw.Cairo.create window in
             (* Indentation guidelines *)
             if options#show_indent_lines && not options#show_whitespace_chars
             then (Text_indent_lines.draw_indent_lines self drawable) start stop y0;
@@ -607,12 +654,12 @@ object (self)
             begin
               match self#get_window `LEFT with
                 | Some window ->
-                  let drawable    = new GDraw.drawable window in
-                  drawable#set_line_attributes ~style:`SOLID ();
-                  drawable#set_foreground gutter.Gutter.border_color;
-                  drawable#line ~x:(gutter.Gutter.size - 1) ~y:0 ~x:(gutter.Gutter.size - 1) ~y:h0;
+                  let drawable    = GDraw.Cairo.create window in
+                  set_line_attributes drawable ~width:2 ~style:`SOLID ();
+                  set_foreground drawable gutter.Gutter.border_color;
+                  line drawable (gutter.Gutter.size - 1) 0 (gutter.Gutter.size - 1) h0;
                   if gutter.Gutter.fold_size > 0 then
-                    drawable#line ~x:(gutter.Gutter.size - 2 - gutter.Gutter.fold_size) ~y:0 ~x:(gutter.Gutter.size - 2 - gutter.Gutter.fold_size) ~y:h0;
+                    line drawable (gutter.Gutter.size - 2 - gutter.Gutter.fold_size) 0 (gutter.Gutter.size - 2 - gutter.Gutter.fold_size) h0;
                 | _ -> ()
             end;
             (* Right margin line *)
@@ -620,9 +667,9 @@ object (self)
               match options#visible_right_margin with
                 | Some (column, color) ->
                   let x = approx_char_width * column - hadjust - 1 in (* -1 per evitare sovrapposizione col cursore *)
-                  drawable#set_line_attributes ~style:`SOLID ();
-                  drawable#set_foreground color;
-                  drawable#line ~x ~y:0 ~x ~y:h0;
+                  set_line_attributes drawable ~width:2 ~style:`SOLID ();
+                  set_foreground drawable color;
+                  line drawable x 0 x h0;
                 | _ -> ()
             end;
             (* ocamldoc_paragraph_bgcolor_enabled *)
@@ -641,11 +688,11 @@ object (self)
                           begin
                             match Project.find_bookmark project filename buffer#as_gtext_buffer !iter with
                               | Some bm when bm.Oe.bm_num >= Bookmark.limit ->
-                                drawable#set_line_attributes ~width:2 ~style:`SOLID ();
-                                drawable#set_foreground options#indent_lines_color_dashed (*options#text_color*);
+                                set_line_attributes drawable ~width:2 ~style:`SOLID ();
+                                set_foreground drawable options#indent_lines_color_dashed (*options#text_color*);
                                 let y, h = view#get_line_yrange !iter in
                                 let y = y - y0 + h in
-                                drawable#line ~x:0 ~y ~x:w0 ~y;
+                                line drawable 0 y w0 y;
                               | _ -> ()
                           end;
                           iter := !iter#forward_line;
@@ -663,9 +710,11 @@ object (self)
                 let rect = self#get_iter_location iter in
                 let x = Gdk.Rectangle.x rect - hadjust in
                 let y = Gdk.Rectangle.y rect - y0 in
-                Pango.Layout.set_text layout text;
-                drawable#put_layout ~x ~y ~fore:options#base_color layout;
-                drawable#put_layout ~x ~y ~fore:options#indent_lines_color_solid layout;
+                layout#set_text text;
+                set_foreground drawable options#indent_lines_color_solid;
+                Cairo_pango.show_layout drawable layout#as_layout;
+                (*drawable#put_layout ~x ~y ~fore:options#base_color layout;
+                drawable#put_layout ~x ~y ~fore:options#indent_lines_color_solid layout;*)
               in
               while !iter#compare expose_bottom < 0 do
                 let line_num = !iter#line in
@@ -690,9 +739,9 @@ object (self)
             (* Dot leaders *)
             if options#show_dot_leaders && not options#show_whitespace_chars then begin
               (*Prf.crono Prf.prf_draw_dot_leaders begin fun () ->*)
-                Gdk.GC.set_fill drawable#gc `SOLID;
-                drawable#set_line_attributes ~width:1 ~style:Oe_config.dash_style ();
-                drawable#set_foreground options#text_color;
+                (*Gdk.GC.set_fill drawable#gc `SOLID;*)
+                set_line_attributes drawable ~width:1 ~style:Oe_config.dash_style ();
+                set_foreground drawable options#text_color;
                 let offset = self#left_margin - hadjust in
                 Alignment.iter ~start:expose_top ~stop:expose_bottom begin fun _ _ start stop _ ->
                   let start = start#forward_char in
@@ -703,15 +752,15 @@ object (self)
                     let y, h = self#get_line_yrange start in
                     let y = y - y0 + h - 3 (*(min 3 (h / 5))*) in
                     (*Gdk.GC.set_dashes drawable#gc ~offset:(x2 - 6 (*- x1*)) [1; approx_char_width - 1];*)
-                    Gdk.GC.set_dashes drawable#gc ~offset:(x2 - approx_char_width - 2) [1; approx_char_width - 1];
-                    drawable#line ~x:x1 ~y ~x:x2 ~y;
+                    (*Gdk.GC.set_dashes drawable#gc ~offset:(x2 - approx_char_width - 2) [1; approx_char_width - 1];*)
+                    line drawable x1 y x2 y;
                   end
                 end
               (*end;*)
             end (*()*);
             (* Current line border *)
             begin
-              if self#misc#get_flag `HAS_FOCUS && options#current_line_border_enabled then begin
+              if self#has_focus && options#current_line_border_enabled then begin
                 match options#highlight_current_line with
                   | Some _ ->
                     let iter = buffer#get_iter `INSERT in
@@ -719,13 +768,13 @@ object (self)
                     let y = y - y0 in
                     if iter#equal buffer#end_iter && iter#line_index = 0 then begin
                       (* Fix for draw_current_line_background *)
-                      drawable#set_foreground options#current_line_bg_color;
-                      drawable#rectangle ~x:self#left_margin ~y ~filled:true ~width:w0 ~height:h ();
+                      set_foreground drawable options#current_line_bg_color;
+                      rectangle drawable ~x:self#left_margin ~y ~filled:true ~width:w0 ~height:h ();
                     end;
-                    drawable#set_line_attributes ~join:Oe_config.current_line_join ~width:Oe_config.current_line_width ~style:Oe_config.current_line_style ();
-                    drawable#set_foreground options#current_line_border_color;
-                    Gdk.GC.set_dashes drawable#gc ~offset:1 Oe_config.on_off_dashes;
-                    drawable#rectangle ~x:current_line_border_x1 ~y ~filled:false
+                    set_line_attributes drawable ~join:Oe_config.current_line_join ~width:Oe_config.current_line_width ~style:Oe_config.current_line_style ();
+                    set_foreground drawable options#current_line_border_color;
+                    (*Gdk.GC.set_dashes drawable#gc ~offset:1 Oe_config.on_off_dashes;*)
+                    rectangle drawable ~x:current_line_border_x1 ~y ~filled:false
                       ~width:(w0 - current_line_border_x2) ~height:(h - adjust) ();
                   | _ -> ()
               end;
@@ -734,8 +783,8 @@ object (self)
             begin
               match current_matching_tag_bounds_draw with
                 | (lstart, lstop) :: (rstart, rstop) :: [] ->
-                  drawable#set_foreground Oe_config.matching_delim_border_color;
-                  drawable#set_line_attributes ~width:1 ~style:`SOLID ();
+                  set_foreground drawable Oe_config.matching_delim_border_color;
+                  set_line_attributes drawable ~width:1 ~style:`SOLID ();
                   let draw start stop =
                     match buffer#get_iter_at_mark_opt (`MARK start) with
                       | Some start ->
@@ -773,7 +822,7 @@ object (self)
                                 then yl1 + ((!lines_displayed - 1) * (hl1 / !n_display_lines))
                                 else yl1 + view#pixels_above_lines
                               in
-                              drawable#rectangle ~x ~y ~width ~height ();
+                              rectangle drawable ~x ~y ~width ~height ()
                             | _ -> ()
                         end
                       | _ -> ()
@@ -797,8 +846,8 @@ object (self)
           let stop = stop#forward_line#set_line_index 0 in
           match Preferences.preferences#get.Preferences.pref_ocamldoc_paragraph_bgcolor_1 with
             | Some color ->
-              drawable#set_foreground (`NAME (Color.add_value color 0.08));
-              drawable#set_line_attributes ~width:1 ~style:`SOLID ();
+              set_foreground drawable (`NAME (Color.add_value color 0.08));
+              set_line_attributes drawable ~width:1 ~style:`SOLID ();
               let hadjust = match hadjustment with Some adj -> int_of_float adj#value | _ -> 0 in
               while !start#forward_line#compare stop <= 0 && not (!start#equal self#buffer#end_iter) do
                 if !start#has_tag tag then begin
@@ -809,7 +858,7 @@ object (self)
                   let stop_tag = !start#forward_to_tag_toggle (Some tag) in
                   let y2, h = view#get_line_yrange stop_tag in
                   let height = y2 - y0 + h - y in
-                  drawable#rectangle ~x ~y ~width ~height ();
+                  rectangle drawable ~x ~y ~width ~height ();
                   start := stop_tag#set_line_index 0;
                 end;
                 start := !start#forward_line;

@@ -194,23 +194,23 @@ object (self)
 
   method change_font_size increment =
     let get_tag_fd (tag : GText.tag) =
-      Pango.Font.from_string (tag#get_property {
+      GPango.font_description_from_string (tag#get_property {
           Gobject.name = "font";
           conv         =
             {Gobject.kind = `STRING;
               proj         = (function `STRING (Some x) -> x | _ -> "");
               inj          = (fun x -> `STRING (Some x))}})
     in
-    let change_size fd =
-      let size = Pango.Font.get_size fd + increment * Pango.scale in
-      if size >= 0 then Pango.Font.modify fd ~size ();
+    let change_size (fd : GPango.font_description) =
+      let size = fd#size + increment * Pango.scale in
+      if size >= 0 then fd#modify ~size ();
       size >= 0
     in
     let fd = odoc_view#misc#pango_context#font_description in
     if change_size fd then odoc_view#misc#modify_font fd;
     List.iter begin fun tag ->
       let fd = get_tag_fd tag in
-      if change_size fd then tag#set_property (`FONT_DESC fd);
+      if change_size fd then tag#set_property (`FONT_DESC fd#fd);
     end (tag_type2 :: odoc_tag :: tags);
     (*Stack.iter begin fun widget ->
       let fd = widget#view#misc#pango_context#font_description in
@@ -298,7 +298,7 @@ object (self)
         find_and_fill();
         true
       end else if GdkEvent.Key.keyval ev = GdkKeysyms._Down || GdkEvent.Key.keyval ev = GdkKeysyms._Up then begin
-        if box_slist#misc#get_flag `VISIBLE then (self#show_current_page());
+        if box_slist#visible then (self#show_current_page());
         true;
       end else false
     end);
@@ -346,7 +346,7 @@ object (self)
     let create_timeout _ =
       id := Some (GMain.Timeout.add ~ms:100 ~callback:begin fun () ->
           let has_toplevel_focus = match GWindow.toplevel self#coerce with | Some w -> w#has_toplevel_focus | _ -> false in
-          if has_toplevel_focus && vbox#misc#get_flag `REALIZED && (need_timeout()) then begin
+          if has_toplevel_focus && (need_timeout()) then begin
             try self#update_module_details ()
             with ex -> Printf.eprintf "File \"module_browser_tool.ml\": %s\n%s\n%!" (Printexc.to_string ex) (Printexc.get_backtrace());
           end;
@@ -365,8 +365,8 @@ object (self)
     ignore (ebox#event#connect#key_release ~callback:begin fun ev ->
       let state = GdkEvent.Key.state ev in
       let key = GdkEvent.Key.keyval ev in
-      let box_slist_visible = box_slist#misc#get_flag `VISIBLE in
-      let box_odoc_visible = box_odoc#misc#get_flag `VISIBLE in
+      let box_slist_visible = box_slist#visible in
+      let box_odoc_visible = box_odoc#visible in
       if box_slist_visible && state = [`MOD1] && key = _Left then begin
         ignore (self#go_back ());
         true
@@ -392,7 +392,7 @@ object (self)
         end;
         true*)
       end else if key = GdkKeysyms._F3 then begin
-        if List.for_all entry_find#misc#get_flag [`REALIZED; `VISIBLE] then (entry_find#misc#grab_focus());
+        if entry_find#visible then (entry_find#misc#grab_focus());
         true
       end else if key = GdkKeysyms._F1 || (state = [`MOD1] && key = GdkKeysyms._Return) then begin
         button_layout_odoc#set_active (not button_layout_odoc#get_active);
@@ -437,7 +437,7 @@ object (self)
                   in
                   let label = GMisc.label ~xpad:5 ~ypad:5 ~markup () in
                   Gaux.may (odoc_view#get_window `WIDGET) ~f:begin fun window ->
-                    let pX, pY = Gdk.Window.get_pointer_location (Gdk.Window.root_parent ()) in
+                    let pX, pY = Gdk.Window.get_pointer_location odoc_view#misc#window in
                     ignore (self#tooltip_destroy());
                     let popup = Gtk_util.window_tooltip label#coerce ~parent:odoc_view ~fade:true ~x:(pX + 0) ~y:(pY + 20) () in
                     tooltip_popup <- Some (popup, markup);
@@ -466,19 +466,19 @@ object (self)
   method private get_word_bounds iter =
     odoc_buffer#select_word ~iter ~pat:Ocaml_word_bound.longid ~select:false ()
 
-  method is_odoc_visible = box_odoc#misc#get_flag `VISIBLE
-  method is_slist_visible = box_slist#misc#get_flag `VISIBLE
+  method is_odoc_visible = box_odoc#visible
+  method is_slist_visible = box_slist#visible
 
   (** default_select_func *)
   method private default_select_func slist =
-    if slist#length = 1 && slist#view#misc#get_flag `VISIBLE then
+    if slist#length = 1 && slist#view#visible then
       Gaux.may slist#model#get_iter_first ~f:slist#view#selection#select_iter;
 
   (** select_best_match *)
   method private select_best_match text slist =
     let select_path path =
       Gmisclib.Idle.add begin fun () ->
-        if slist#view#misc#get_flag `VISIBLE then begin
+        if slist#view#visible then begin
           (slist#view :> GTree.view)#scroll_to_cell ~align:(0.38, 0.0) path slist#vc_icon;
           slist#view#set_cursor path slist#vc_icon;
         end
@@ -532,7 +532,7 @@ object (self)
           if Str.string_match re name 0 && (kind = [] || List.mem sym.sy_kind kind) then begin
             widget#view#selection#select_iter row;
             Gmisclib.Idle.add begin fun () ->
-              if widget#view#misc#get_flag `VISIBLE then begin
+              if widget#view#visible then begin
                 widget#view#scroll_to_cell ~align:(0.38, 0.0) path widget#vc_icon;
                 widget#view#set_cursor path widget#vc_icon;
               end;
@@ -873,7 +873,7 @@ object (self)
     end else widget#view#misc#grab_focus();
     if fill || search_results_length <= Oe_config.module_browser_max_results then begin
       ignore (widget#fill symbols);
-      Gmisclib.Idle.add (fun () -> if widget#view#misc#get_flag `REALIZED then widget#view#scroll_to_point 0 0)
+      Gmisclib.Idle.add (fun () -> if widget#visible then widget#view#scroll_to_point 0 0)
     end;
     f widget
 
@@ -1113,7 +1113,7 @@ object (self)
     with Stack.Empty -> ()
 
   method private toggle_layout : [ `slist | `odoc ] -> unit = function pane ->
-    let (!!) x = List.for_all x#misc#get_flag [`VISIBLE; `REALIZED] in
+    let (!!) x = x#visible in
     begin
       match pane with
         | `slist ->
@@ -1125,9 +1125,9 @@ object (self)
     layout_toggled#call()
 
   method layout : [ `slist | `odoc | `both ] =
-    if box_slist#misc#get_flag `VISIBLE && box_odoc#misc#get_flag `VISIBLE then `both
-    else if box_slist#misc#get_flag `VISIBLE then `slist
-    else if box_odoc#misc#get_flag `VISIBLE then `odoc
+    if box_slist#visible && box_odoc#visible then `both
+    else if box_slist#visible then `slist
+    else if box_odoc#visible then `odoc
     else assert false
 
   method private set_is_completion is_compl =

@@ -105,8 +105,8 @@ class page ?file ~project ~scroll_offset ~offset ~editor () =
     ~packing:sbbox#pack
     ~callback:begin fun () ->
       let fd = text_view#misc#pango_context#font_description in
-      let size = Pango.Font.get_size fd + Pango.scale in
-      Pango.Font.modify fd ~size ();
+      let size = fd#size + Pango.scale in
+      fd#modify ~size ();
       text_view#misc#modify_font fd;
       Line_num_labl.iter (fun lab -> lab#misc#modify_font fd) text_view#line_num_labl;
       Gmisclib.Idle.add text_view#draw_gutter;
@@ -117,10 +117,10 @@ class page ?file ~project ~scroll_offset ~offset ~editor () =
     ~packing:sbbox#pack
     ~callback:begin fun () ->
       let fd = text_view#misc#pango_context#font_description in
-      let size = Pango.Font.get_size fd in
+      let size = fd#size in
       if size - Pango.scale >= (7 * Pango.scale) then begin
         let size = size - Pango.scale in
-        Pango.Font.modify fd ~size ();
+        fd#modify ~size ();
         text_view#misc#modify_font fd;
         Line_num_labl.iter (fun lab -> lab#misc#modify_font fd) text_view#line_num_labl;
         Gmisclib.Idle.add text_view#draw_gutter
@@ -189,7 +189,7 @@ class page ?file ~project ~scroll_offset ~offset ~editor () =
     end
   in
   (** Global gutter *)
-  let global_gutter = GMisc.drawing_area ~width:Oe_config.global_gutter_size ~packing:global_gutter_ebox#add
+  let global_gutter = GMisc.drawing_area ~packing:global_gutter_ebox#add
     ~show:Preferences.preferences#get.Preferences.pref_show_global_gutter () in
   let _ = global_gutter#misc#set_has_tooltip true in
   let _ = global_gutter#event#add [`BUTTON_PRESS; `BUTTON_RELEASE] in
@@ -511,7 +511,7 @@ object (self)
     let hbox = GPack.hbox ~spacing:1 () in
     let _ = GMisc.image ~pixbuf:Icons.history ~packing:hbox#pack () in
     let label = GMisc.label ~text:(sprintf "\xC2\xAB%s\xC2\xBB history" (Filename.basename self#get_filename)) ~packing:hbox#pack () in
-    Messages.vmessages#append_page ~label_widget:hbox#coerce ~with_spinner:false rev;
+    Messages.vmessages#append_page ~label_widget:hbox#coerce ~with_spinner:false (rev :> Messages.page);
     rev#set_title label#text;
     rev#present();
     rev#set_icon None;

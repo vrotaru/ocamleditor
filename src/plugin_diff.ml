@@ -299,7 +299,7 @@ let _ =
           let callback () =
             try
               editor#with_current_page begin fun page ->
-                if page#view#misc#get_flag `HAS_FOCUS then (Diff.paint_gutter page);
+                if page#view#has_focus then (Diff.paint_gutter page);
               end;
               true
             with ex ->

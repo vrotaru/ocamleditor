@@ -93,11 +93,12 @@ let main () = begin
   GtkThread2.main ();
 end
 
-let _ = Printexc.print main ()
-
-
-
-
+let _ =
+  Printexc.record_backtrace true;
+  try main ()
+  with e ->
+    Printf.printf "Exception: %s\n" @@ Printexc.to_string e;
+    Printexc.print_backtrace stderr
 
 
 
