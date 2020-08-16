@@ -24,6 +24,16 @@ open GUtil
 
 exception Cancel_process_termination
 
+(** The Gtk+ 3.0 is more strict than 2.0 version and will fail on the line
+
+    let hpaned = GPack.paned `HORIZONTAL ()
+
+    if the the initialization routine was not called.
+    So I moved the call of GMain.init () from the ocamleditor here.
+    Maybe this will be temporary. Maybe.
+*)
+let _locale = GMain.init ~setlocale: false ()
+
 let hpaned = GPack.paned `HORIZONTAL ()
 let vpaned = GPack.paned `VERTICAL ()
 
