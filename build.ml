@@ -3239,7 +3239,7 @@ let targets = [
     other_objects        = "";
     external_tasks       = [];
     restrictions         = [];
-    dependencies         = [14; 19; 16; 26; 22];
+    dependencies         = [14; 16; 26; 22];
     show                 = true;
     rc_filename          = None;
   };

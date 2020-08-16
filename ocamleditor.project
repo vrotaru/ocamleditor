@@ -211,7 +211,7 @@
       <lib_install_path></lib_install_path>
       <external_tasks/>
       <restrictions></restrictions>
-      <dependencies>14,19,16,26,22</dependencies>
+      <dependencies>14,16,26,22</dependencies>
     </target>
     <target name="ocamleditor-bytecode" default="false" id="0" sub_targets="" is_fl_package="false" subsystem="Console" readonly="false" visible="true" node_collapsed="false">
       <descr></descr>
