@@ -473,7 +473,7 @@ let find_part_impl f offset = function
 
 (** find_by_offset *)
 let find_by_offset ~project ~filename ~offset ?compile_buffer () =
-  match Binannot.read_cmt ~project ~filename ?compile_buffer () with
+  match Cmt_common.read_cmt ~project ~filename ?compile_buffer () with
     | Some (_, _, cmt) ->
       begin
         let f ba_loc ba_type =
@@ -498,23 +498,3 @@ let find ~page ?iter () =
   let compile_buffer () = page#compile_buffer ?join:(Some true) () in
   let iter = match iter with Some it -> it | _ -> page#buffer#get_iter `INSERT in
   find_by_offset ~project:page#project ~filename:page#get_filename ~offset:iter#offset ~compile_buffer ()
-(*  match Binannot.read_cmt ~project:page#project ~filename:page#get_filename ~compile_buffer () with
-    | Some (filename, _, cmt) ->
-      begin
-        let offset = iter#offset in
-        let f ba_loc ba_type =
-          Log.println `TRACE "%d; %s : %s" offset (string_of_loc ba_loc) ba_type;
-          raise (Found {ba_loc; ba_type});
-        in
-        try
-          Odoc_info.reset_type_names();
-          begin
-            match cmt.cmt_annots with
-              | Implementation {str_items; _} -> List.iter (find_structure_item f offset) str_items
-              | Partial_implementation parts -> Array.iter (find_part_impl f offset) parts
-              | _ -> ()
-          end;
-          None
-        with Found ba -> Some ba
-      end;
-    | _ -> None*)

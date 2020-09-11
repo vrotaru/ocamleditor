@@ -726,7 +726,7 @@ let scan ~project ~filename ?compile_buffer () =
   try
     begin
       let timestamp = try (Hashtbl.find table_idents filename).timestamp with Not_found -> 0. in
-      match Binannot.read_cmt ~project ~filename ~timestamp ?compile_buffer () with
+      match Cmt_common.read_cmt ~project ~filename ~timestamp ?compile_buffer () with
         | Some (filename, timestamp, ({cmt_sourcefile = Some cmt_sourcefile; _} as cmt)) ->
           let size = (Unix.stat (cmt.cmt_builddir // cmt_sourcefile)).Unix.st_size + 1 in
           let entry = {

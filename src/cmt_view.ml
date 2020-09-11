@@ -456,7 +456,7 @@ object (self)
 
   method load () =
     let compile_buffer () = page#compile_buffer ?join:(Some true) () in
-    match Binannot.read_cmt ~project:page#project ~filename:page#get_filename ~compile_buffer () with
+    match Cmt_common.read_cmt ~project:page#project ~filename:page#get_filename ~compile_buffer () with
       | None -> ()
       | Some (_, _, cmt) ->
         filename <- page#get_filename;
