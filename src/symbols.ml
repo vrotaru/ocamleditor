@@ -460,8 +460,8 @@ let find_local_defs ~regexp ~(project : Prj.t) ~filename ~offset =
       let modlid = modname_of_path filename in
       List.map (fun def ->
         let typ =
-          match Binannot_type.find_by_offset ~project ~filename ~offset:def.def_loc.loc_start.pos_cnum () with
-            | Some typ -> typ.Binannot_type.ba_type
+          match Cmt_common.find_by_offset ~project ~filename ~offset:def.def_loc.loc_start.pos_cnum () with
+            | Some typ -> typ.Cmt_common.ba_type
             | _ -> ""
         in {
           sy_id        = [modlid; def.def_name];

@@ -52,7 +52,7 @@ let find_external_definition ~project ~ext_ref =
               if List.exists ((=) basename) files then filename else (Filename.dirname filename // name)
             end else filename
           in
-          scan ~project ~filename ();
+          Cmt_common.scan ~project ~filename ();
           let {locations; _} = Hashtbl.find table_idents filename in
           begin
             try
@@ -88,7 +88,7 @@ let find_project_external_references =
   let find_project_external_references' project def =
     let { Asttypes.loc; _ } = def.ident_loc in
     let def_modname = modname_of_path loc.loc_start.pos_fname in
-    scan_project_files ~project begin fun acc _filename entry ->
+    Cmt_common.scan_project_files ~project begin fun acc _filename entry ->
       try
         let mod_refs = Hashtbl.find_all entry.ext_refs def_modname in
         let filtered =
@@ -113,7 +113,7 @@ let find_external_references ~project ~ext_ref:{ident_kind; ident_loc; _} =
   match ident_kind with
     | Ext_ref | Open _ ->
       let lid = Longident.flatten (Longident.parse ident_loc.txt) in
-      scan_project_files ~project begin fun acc _filename entry ->
+      Cmt_common.scan_project_files ~project begin fun acc _filename entry ->
         match lid with
           | mod_name :: _ :: _ | mod_name :: [] ->
             let all_refs = Hashtbl.find_all entry.ext_refs mod_name in
@@ -172,7 +172,7 @@ let find_definition_and_references' ~project ~entry ~ident =
 
 (** find_ident *)
 let find_ident ~project ~filename ~offset ?compile_buffer () =
-  scan ~project ~filename ?compile_buffer ();
+  Cmt_common.scan ~project ~filename ?compile_buffer ();
   try
     let {locations; _} = Hashtbl.find table_idents filename in
     locations.(offset)
@@ -181,7 +181,7 @@ let find_ident ~project ~filename ~offset ?compile_buffer () =
 
 (** find_local_definitions *)
 let find_local_definitions ~project ~filename ?compile_buffer () =
-  scan ~project ~filename ?compile_buffer ();
+  Cmt_common.scan ~project ~filename ?compile_buffer ();
   try
     let {definitions; _} = Hashtbl.find table_idents filename in
     Some definitions
@@ -190,7 +190,7 @@ let find_local_definitions ~project ~filename ?compile_buffer () =
 
 (** find_definition_and_references *)
 let find_definition_and_references ~project ~filename ~offset ?compile_buffer () =
-  scan ~project ~filename ?compile_buffer ();
+  Cmt_common.scan ~project ~filename ?compile_buffer ();
   try
     let entry = Hashtbl.find table_idents filename in
     let ident = find_ident ~project ~filename ~offset ?compile_buffer () in
@@ -201,7 +201,7 @@ let find_definition_and_references ~project ~filename ~offset ?compile_buffer ()
 
 (** find_definition *)
 let find_definition ~project ~filename ~offset ?compile_buffer () =
-  scan ~project ~filename ?compile_buffer ();
+  Cmt_common.scan ~project ~filename ?compile_buffer ();
   try
     let entry = Hashtbl.find table_idents filename in
     let ident = entry.locations.(offset) in
@@ -222,7 +222,7 @@ let find_definition ~project ~filename ~offset ?compile_buffer () =
 
 (** find_used_components *)
 let find_used_components ~project ~filename ~offset ?compile_buffer () =
-  scan ~project ~filename ?compile_buffer ();
+  Cmt_common.scan ~project ~filename ?compile_buffer ();
   try
     let entry = Hashtbl.find table_idents filename in
     let ident = entry.locations.(offset) in
