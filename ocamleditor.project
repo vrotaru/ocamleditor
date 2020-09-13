@@ -192,11 +192,11 @@
       <descr></descr>
       <byt>false</byt>
       <opt>true</opt>
-      <libs>process_termination odoc_info gmisclib common icons otherwidgets oebuildlib ocamleditor_lib</libs>
+      <libs>process_termination odoc_info gmisclib common icons otherwidgets oebuildlib v ocamleditor_lib</libs>
       <other_objects></other_objects>
       <files>ocamleditor.ml</files>
       <package>compiler-libs.common,dynlink,lablgtk2,str,unix,xml-light</package>
-      <includes>+ocamldoc gmisclib common icons otherwidgets oebuild </includes>
+      <includes>+ocamldoc gmisclib common icons otherwidgets oebuild v410</includes>
       <thread>true</thread>
       <vmthread>false</vmthread>
       <pp></pp>
@@ -211,17 +211,17 @@
       <lib_install_path></lib_install_path>
       <external_tasks/>
       <restrictions></restrictions>
-      <dependencies>14,19,16,26,22</dependencies>
+      <dependencies>14,19,16,26,22,28</dependencies>
     </target>
     <target name="ocamleditor-bytecode" default="false" id="0" sub_targets="" is_fl_package="false" subsystem="Console" readonly="false" visible="true" node_collapsed="false">
       <descr></descr>
       <byt>true</byt>
       <opt>false</opt>
-      <libs>process_termination odoc_info gmisclib common icons otherwidgets oebuildlib</libs>
+      <libs>process_termination odoc_info gmisclib common icons otherwidgets v oebuildlib</libs>
       <other_objects></other_objects>
       <files>ocamleditor.ml</files>
       <package>compiler-libs.common,dynlink,lablgtk2,str,unix,xml-light</package>
-      <includes>+ocamldoc gmisclib common icons otherwidgets oebuild </includes>
+      <includes>+ocamldoc gmisclib common icons otherwidgets oebuild v410</includes>
       <thread>true</thread>
       <vmthread>false</vmthread>
       <pp></pp>
@@ -236,17 +236,17 @@
       <lib_install_path></lib_install_path>
       <external_tasks/>
       <restrictions></restrictions>
-      <dependencies>4,10,7,5,6,8,9,20,17,18,25</dependencies>
+      <dependencies>4,10,7,5,8,9,20,17,18,25,28</dependencies>
     </target>
     <target name="ocamleditor-msvc" default="false" id="15" sub_targets="" is_fl_package="false" subsystem="Console" readonly="false" visible="true" node_collapsed="false">
       <descr></descr>
       <byt>false</byt>
       <opt>true</opt>
-      <libs>process_termination odoc_info gmisclib common icons otherwidgets oebuildlib ocamleditor_lib</libs>
+      <libs>process_termination odoc_info gmisclib common icons otherwidgets oebuildlib v ocamleditor_lib</libs>
       <other_objects></other_objects>
       <files>ocamleditor.ml</files>
       <package>compiler-libs.common,dynlink,lablgtk2,str,unix,xml-light</package>
-      <includes>+ocamldoc gmisclib common icons otherwidgets oebuild </includes>
+      <includes>+ocamldoc gmisclib common icons otherwidgets oebuild v410</includes>
       <thread>true</thread>
       <vmthread>false</vmthread>
       <pp></pp>
@@ -276,7 +276,7 @@
         </task>
       </external_tasks>
       <restrictions>IS_WIN32</restrictions>
-      <dependencies>14,19,16,26,22</dependencies>
+      <dependencies>14,19,16,26,22,28</dependencies>
       <resource_file>
         <filename>.\ocamleditor.opt.resource.rc</filename>
         <title>OCamlEditor</title>
@@ -291,11 +291,11 @@
       <descr></descr>
       <byt>false</byt>
       <opt>true</opt>
-      <libs>process_termination odoc_info gmisclib common icons otherwidgets oebuildlib ocamleditor_lib</libs>
+      <libs>process_termination odoc_info gmisclib common icons otherwidgets oebuildlib v ocamleditor_lib</libs>
       <other_objects></other_objects>
       <files>ocamleditor.ml</files>
       <package>compiler-libs.common,dynlink,lablgtk2,str,unix,xml-light</package>
-      <includes>+ocamldoc gmisclib common icons otherwidgets oebuild </includes>
+      <includes>+ocamldoc gmisclib common icons otherwidgets oebuild v410</includes>
       <thread>true</thread>
       <vmthread>false</vmthread>
       <pp></pp>
@@ -310,17 +310,17 @@
       <lib_install_path></lib_install_path>
       <external_tasks/>
       <restrictions></restrictions>
-      <dependencies>14,19,16,26</dependencies>
+      <dependencies>14,19,16,26,28</dependencies>
     </target>
     <target name="ocamleditor-lib" default="false" id="14" sub_targets="" is_fl_package="false" subsystem="" readonly="false" visible="true" node_collapsed="false">
       <descr></descr>
       <byt>false</byt>
       <opt>true</opt>
-      <libs></libs>
+      <libs>v</libs>
       <other_objects></other_objects>
       <files>ocamleditor_lib.ml</files>
       <package>compiler-libs.common,dynlink,lablgtk2,str,unix,xml-light</package>
-      <includes>+ocamldoc gmisclib common icons otherwidgets oebuild </includes>
+      <includes>+ocamldoc gmisclib common icons otherwidgets oebuild v410</includes>
       <thread>true</thread>
       <vmthread>false</vmthread>
       <pp></pp>
@@ -335,7 +335,7 @@
       <lib_install_path></lib_install_path>
       <external_tasks/>
       <restrictions></restrictions>
-      <dependencies>4,10,5,6,8,9,20</dependencies>
+      <dependencies>4,10,5,8,9,20,28</dependencies>
     </target>
     <target name="plugin-remote-bytecode" default="false" id="17" sub_targets="" is_fl_package="false" subsystem="" readonly="false" visible="true" node_collapsed="false">
       <descr></descr>
@@ -777,6 +777,31 @@
       <restrictions></restrictions>
       <dependencies></dependencies>
     </target>
+    <target name="version-4.10" default="false" id="28" sub_targets="" is_fl_package="false" subsystem="" readonly="false" visible="true" node_collapsed="false">
+      <descr>Ocaml 4.10.x specific code</descr>
+      <byt>true</byt>
+      <opt>true</opt>
+      <libs>common</libs>
+      <other_objects></other_objects>
+      <files>v410/binannot.ml v410/binannot_ident_scan.ml v410/binannot_type.ml</files>
+      <package>compiler-libs.common</package>
+      <includes>+ocamldoc common v410</includes>
+      <thread>false</thread>
+      <vmthread>false</vmthread>
+      <pp></pp>
+      <inline></inline>
+      <nodep>false</nodep>
+      <dontlinkdep>false</dontlinkdep>
+      <dontaddopt>false</dontaddopt>
+      <cflags></cflags>
+      <lflags></lflags>
+      <target_type>Library</target_type>
+      <outname>v</outname>
+      <lib_install_path></lib_install_path>
+      <external_tasks/>
+      <restrictions>OCAML(cmt_magic_number=Caml1999T027)</restrictions>
+      <dependencies>4</dependencies>
+    </target>
   </targets>
   <executables>
     <executable name="ocamleditor-bytecode" default="false" target_id="0" id="0">
@@ -818,6 +843,7 @@
       <target target_id="22" show="true"/>
       <target target_id="13" show="false"/>
       <target target_id="27" show="false"/>
+      <target target_id="28" show="true"/>
     </targets>
     <args>
       <arg id="0" type="Bool" key="-record-backtrace" pass="-key value" command="build">

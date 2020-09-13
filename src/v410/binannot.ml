@@ -23,7 +23,6 @@
 open Printf
 open Location
 open Lexing
-open Miscellanea
 
 
 module Log = Common.Log.Make(struct let prefix = "Binannot" end)
