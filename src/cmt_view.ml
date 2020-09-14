@@ -156,7 +156,7 @@ let empty () =
 let dummy_re = Str.regexp ""
 
 (** widget *)
-class widget ~editor:_ ~page ?packing () =
+class widget ~page ?packing () =
   let pref                   = Preferences.preferences#get in
   let show_types             = pref.Preferences.pref_outline_show_types in
   let vbox                   = GPack.vbox ?packing () in
@@ -1091,10 +1091,10 @@ end
 
 let create = new widget
 
-let window ~editor ~page () =
+let window ~page () =
   let window = GWindow.window ~position:`CENTER ~show:false () in
   let vbox = GPack.vbox ~packing:window#add () in
-  let widget = create ~editor ~page ~packing:vbox#add () in
+  let widget = create ~page ~packing:vbox#add () in
   ignore (window#event#connect#key_press ~callback:begin fun ev ->
     if GdkEvent.Key.keyval ev = GdkKeysyms._Escape then (window#destroy (); true)
     else false

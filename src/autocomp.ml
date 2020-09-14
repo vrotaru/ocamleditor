@@ -140,7 +140,7 @@ let compile_buffer ~project ~editor ~page ?(join=false) () =
             Gmisclib.Idle.add ~prio:100 begin fun () ->
               match page#outline with
                 | None ->
-                  let ol = new Cmt_view.widget ~editor ~page () in
+                  let ol = new Cmt_view.widget ~page () in
                   ol#load ();
                   Gaux.may page#outline ~f:(fun x -> x#destroy());
                   page#set_outline (Some ol);
