@@ -23,7 +23,7 @@
 open Lexing
 open Parser
 
-type result = {
+type result = Versioned_lex.result = {
   lexeme : string;
   start: int;
   length: int
@@ -93,16 +93,7 @@ let paths_opened text =
   (List.rev !paths)
 
 (** Tutte le stringhe. *)
-let strings text =
-  let strings = ref [] in
-  analyse text begin fun ~token ~lexeme:_ ~start ~length ~lexbuf:_ ->
-    match [@warning "-4"] token with
-      | STRING (s, _) ->
-        strings := {lexeme = s; start = start; length = length} :: !strings;
-        None
-      | _ -> None
-  end;
-  (*List.rev*) !strings
+let strings text = Versioned_lex.strings analyse text 
 
 (** in_string *)
 let in_string ?(utf8=true) text =

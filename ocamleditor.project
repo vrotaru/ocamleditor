@@ -196,7 +196,7 @@
       <other_objects></other_objects>
       <files>ocamleditor.ml</files>
       <package>compiler-libs.common,dynlink,lablgtk2,str,unix,xml-light</package>
-      <includes>+ocamldoc gmisclib common icons otherwidgets oebuild v410</includes>
+      <includes>+ocamldoc gmisclib common icons otherwidgets oebuild v410 v411</includes>
       <thread>true</thread>
       <vmthread>false</vmthread>
       <pp></pp>
@@ -211,7 +211,7 @@
       <lib_install_path></lib_install_path>
       <external_tasks/>
       <restrictions></restrictions>
-      <dependencies>14,19,16,26,22,28</dependencies>
+      <dependencies>14,19,16,26,22,28,29</dependencies>
     </target>
     <target name="ocamleditor-bytecode" default="false" id="0" sub_targets="" is_fl_package="false" subsystem="Console" readonly="false" visible="true" node_collapsed="false">
       <descr></descr>
@@ -221,7 +221,7 @@
       <other_objects></other_objects>
       <files>ocamleditor.ml</files>
       <package>compiler-libs.common,dynlink,lablgtk2,str,unix,xml-light</package>
-      <includes>+ocamldoc gmisclib common icons otherwidgets oebuild v410</includes>
+      <includes>+ocamldoc gmisclib common icons otherwidgets oebuild v410 v411</includes>
       <thread>true</thread>
       <vmthread>false</vmthread>
       <pp></pp>
@@ -236,7 +236,7 @@
       <lib_install_path></lib_install_path>
       <external_tasks/>
       <restrictions></restrictions>
-      <dependencies>4,10,7,5,8,9,20,17,18,25,28</dependencies>
+      <dependencies>4,10,7,5,8,9,20,17,18,25,28,29</dependencies>
     </target>
     <target name="ocamleditor-msvc" default="false" id="15" sub_targets="" is_fl_package="false" subsystem="Console" readonly="false" visible="true" node_collapsed="false">
       <descr></descr>
@@ -246,7 +246,7 @@
       <other_objects></other_objects>
       <files>ocamleditor.ml</files>
       <package>compiler-libs.common,dynlink,lablgtk2,str,unix,xml-light</package>
-      <includes>+ocamldoc gmisclib common icons otherwidgets oebuild v410</includes>
+      <includes>+ocamldoc gmisclib common icons otherwidgets oebuild v410 v411</includes>
       <thread>true</thread>
       <vmthread>false</vmthread>
       <pp></pp>
@@ -276,7 +276,7 @@
         </task>
       </external_tasks>
       <restrictions>IS_WIN32</restrictions>
-      <dependencies>14,19,16,26,22,28</dependencies>
+      <dependencies>14,19,16,26,22,28,29</dependencies>
       <resource_file>
         <filename>.\ocamleditor.opt.resource.rc</filename>
         <title>OCamlEditor</title>
@@ -295,7 +295,7 @@
       <other_objects></other_objects>
       <files>ocamleditor.ml</files>
       <package>compiler-libs.common,dynlink,lablgtk2,str,unix,xml-light</package>
-      <includes>+ocamldoc gmisclib common icons otherwidgets oebuild v410</includes>
+      <includes>+ocamldoc gmisclib common icons otherwidgets oebuild v410 v411</includes>
       <thread>true</thread>
       <vmthread>false</vmthread>
       <pp></pp>
@@ -310,7 +310,7 @@
       <lib_install_path></lib_install_path>
       <external_tasks/>
       <restrictions></restrictions>
-      <dependencies>14,19,16,26,28</dependencies>
+      <dependencies>14,19,16,26,28,29</dependencies>
     </target>
     <target name="ocamleditor-lib" default="false" id="14" sub_targets="" is_fl_package="false" subsystem="" readonly="false" visible="true" node_collapsed="false">
       <descr></descr>
@@ -320,7 +320,7 @@
       <other_objects></other_objects>
       <files>ocamleditor_lib.ml</files>
       <package>compiler-libs.common,dynlink,lablgtk2,str,unix,xml-light</package>
-      <includes>+ocamldoc gmisclib common icons otherwidgets oebuild v410</includes>
+      <includes>+ocamldoc gmisclib common icons otherwidgets oebuild v410 v411</includes>
       <thread>true</thread>
       <vmthread>false</vmthread>
       <pp></pp>
@@ -335,7 +335,7 @@
       <lib_install_path></lib_install_path>
       <external_tasks/>
       <restrictions></restrictions>
-      <dependencies>4,10,5,8,9,20,28</dependencies>
+      <dependencies>4,10,5,8,9,20,28,29</dependencies>
     </target>
     <target name="plugin-remote-bytecode" default="false" id="17" sub_targets="" is_fl_package="false" subsystem="" readonly="false" visible="true" node_collapsed="false">
       <descr></descr>
@@ -783,7 +783,7 @@
       <opt>true</opt>
       <libs>common</libs>
       <other_objects></other_objects>
-      <files>v410/binannot.ml v410/binannot_ident_scan.ml v410/binannot_type.ml</files>
+      <files>v410/binannot.ml v410/binannot_ident_scan.ml v410/binannot_type.ml v410/versioned_lex.ml</files>
       <package>compiler-libs.common</package>
       <includes>+ocamldoc common v410</includes>
       <thread>false</thread>
@@ -808,7 +808,7 @@
       <opt>true</opt>
       <libs>common</libs>
       <other_objects></other_objects>
-      <files>v411/binannot.ml v411/binannot_ident_scan.ml v411/binannot_type.ml</files>
+      <files>v411/binannot.ml v411/binannot_ident_scan.ml v411/binannot_type.ml v411/versioned_lex.ml</files>
       <package>compiler-libs.common</package>
       <includes>+ocamldoc common v411</includes>
       <thread>false</thread>
@@ -869,6 +869,7 @@
       <target target_id="13" show="false"/>
       <target target_id="27" show="false"/>
       <target target_id="28" show="true"/>
+      <target target_id="29" show="true"/>
     </targets>
     <args>
       <arg id="0" type="Bool" key="-record-backtrace" pass="-key value" command="build">
